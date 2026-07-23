@@ -1,0 +1,12 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - python3-pip
+  - python3-venv
+  - curl
+  - git
+runcmd:
+  - systemctl enable docker --now

@@ -1,0 +1,10 @@
+{
+  "urn": "urn:dataco:lab_ingestion_feed",
+  "detected": true,
+  "issue_id": "d6c02e5d3cf0",
+  "issue_type": "schema_drift",
+  "severity": "critical",
+  "tag_urn": "urn:li:tag:trust:schema_drift",
+  "assertion_urn": "urn:li:assertion:dataco-schema_drift",
+  "detail": "wrote tag, assertion"
+}

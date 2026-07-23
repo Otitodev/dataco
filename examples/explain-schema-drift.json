@@ -1,0 +1,9 @@
+{
+  "summary": "Schema drift detected in lab_ingestion_feed.",
+  "likely_cause": "The patient_id column type changed from int to str.",
+  "impacted_assets": [
+    "malaria_positivity_dashboard"
+  ],
+  "confidence": "high",
+  "recommended_action": "Contact lab-team to update the ETL mapping."
+}

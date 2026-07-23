@@ -1,0 +1,14 @@
+{
+  "id": "014e69f2781e",
+  "issue_id": "0badd8132356",
+  "subject": "Lab Ingestion Feed Schema Change",
+  "what_happened": "The lab_ingestion_feed dataset had a schema change. The patient_id column type was changed from int to str, breaking the ETL pipeline for downstream dashboards.",
+  "what_is_affected": [
+    "malaria_positivity_dashboard",
+    "lab_turnaround_report"
+  ],
+  "who_to_contact": "lab-team (Data Engineering)",
+  "next_step": "Update the ETL mapping to accept the new column type, or revert the schema change.",
+  "estimated_impact": "high",
+  "generated_at": "2026-07-23T15:53:44.174357"
+}

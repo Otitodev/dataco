@@ -1,0 +1,7 @@
+{
+  "issue_id": "0badd8132356",
+  "ok": true,
+  "tag_urn": "urn:li:tag:trust:schema_drift",
+  "assertion_urn": "urn:li:assertion:dataco-schema_drift",
+  "detail": "wrote tag, assertion"
+}

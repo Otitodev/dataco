@@ -1,0 +1,65 @@
+[
+  {
+    "id": "0badd8132356",
+    "asset_id": "urn:dataco:lab_ingestion_feed",
+    "asset_name": "lab_ingestion_feed",
+    "issue_type": "schema_drift",
+    "severity": "critical",
+    "status": "active",
+    "summary": null,
+    "likely_cause": null,
+    "impacted_assets": [
+      "malaria_positivity_dashboard",
+      "lab_turnaround_report",
+      "specimen_tracking_dashboard",
+      "quality_metrics_report"
+    ],
+    "blast_radius": 4,
+    "owner": "lab-team",
+    "confidence": null,
+    "created_at": "2026-07-23T15:53:44.083871",
+    "updated_at": "2026-07-23T15:53:44.099420",
+    "resolved_at": null
+  },
+  {
+    "id": "8e39ca3ec535",
+    "asset_id": "urn:dataco:patient_registry",
+    "asset_name": "patient_registry",
+    "issue_type": "freshness_stale",
+    "severity": "high",
+    "status": "active",
+    "summary": null,
+    "likely_cause": null,
+    "impacted_assets": [
+      "patient_cohort_analysis",
+      "clinical_trial_matching",
+      "demographics_report"
+    ],
+    "blast_radius": 3,
+    "owner": null,
+    "confidence": null,
+    "created_at": "2026-07-23T15:53:44.104133",
+    "updated_at": "2026-07-23T15:53:44.104133",
+    "resolved_at": null
+  },
+  {
+    "id": "ba0e0c857075",
+    "asset_id": "urn:dataco:claims_ingestion",
+    "asset_name": "claims_ingestion",
+    "issue_type": "owner_changed",
+    "severity": "medium",
+    "status": "active",
+    "summary": null,
+    "likely_cause": null,
+    "impacted_assets": [
+      "revenue_cycle_dashboard",
+      "denial_rate_report"
+    ],
+    "blast_radius": 2,
+    "owner": "billing-team",
+    "confidence": null,
+    "created_at": "2026-07-23T15:53:44.110549",
+    "updated_at": "2026-07-23T15:53:44.110549",
+    "resolved_at": null
+  }
+]

@@ -1,0 +1,28 @@
+# Dependencies / build
+node_modules/
+.svelte-kit/
+build/
+dist/
+
+# Python (also covered by backend/.gitignore; matched at any depth here too)
+.venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Secrets / local data
+.env
+.env.*
+!.env.example
+*.db
+
+# Private infra runbook — not for the public repo
+AGENTS.local.md
+
+# Personal helper scripts (kept local)
+scripts/
+
+# Local agent tooling / settings
+.claude/

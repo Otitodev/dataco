@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   Dataco design tokens — Apple-minimal (HIG: clarity, deference, depth).
+   System typeface, quiet neutrals, one system-blue accent, and colour
+   used sparingly, only where it carries meaning (severity).
+   See DESIGN.md for the rationale. All values pass WCAG AA.
+   ───────────────────────────────────────────────────────────── */
+@theme {
+	/* Surfaces */
+	--color-surface-page: #f5f5f7; /* systemGroupedBackground */
+	--color-surface-card: #ffffff;
+	--color-surface-sunken: #ececee; /* hovers, chips, resolved pills */
+
+	/* Label hierarchy (Apple label / secondary / tertiary) — all AA on white & page */
+	--color-ink-900: #1d1d1f;
+	--color-ink-600: #55555a;
+	--color-ink-400: #6e6e73;
+	--color-line: #d2d2d7; /* hairline separator */
+
+	/* Accent — Apple system blue */
+	--color-brand: #0071e3;
+	--color-brand-ink: #0058b0; /* hover / pressed */
+
+	/* Severity — the only place colour appears with intent.
+	   *        → vivid iOS system colour, for the status dot
+	   *-tint   → soft badge background
+	   *-ink    → darkened text, AA on the tint */
+	--color-severity-critical: #ff3b30;
+	--color-severity-critical-tint: #ffeceb;
+	--color-severity-critical-ink: #c4271d;
+
+	--color-severity-high: #ff9500;
+	--color-severity-high-tint: #fff2e0;
+	--color-severity-high-ink: #985a00;
+
+	--color-severity-medium: #ffcc00;
+	--color-severity-medium-tint: #fff8db;
+	--color-severity-medium-ink: #8a6d00;
+
+	--color-severity-low: #007aff;
+	--color-severity-low-tint: #e6f0fe;
+	--color-severity-low-ink: #0058b0;
+
+	--color-severity-resolved: #8e8e93;
+
+	/* Type — the system stack (SF Pro on Apple platforms). No web fonts:
+	   faster, and truer to the platform look. Mono only for real code. */
+	--font-sans:
+		-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto,
+		Helvetica, Arial, sans-serif;
+	--font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@layer base {
+	html {
+		font-family: var(--font-sans);
+	}
+	body {
+		background-color: var(--color-surface-page);
+		color: var(--color-ink-900);
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+	}
+	/* Themed keyboard focus everywhere — never the default ring. */
+	:focus-visible {
+		outline: 2px solid var(--color-brand);
+		outline-offset: 2px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+	}
+}
