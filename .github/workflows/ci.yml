@@ -17,7 +17,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install fastapi uvicorn sqlalchemy pydantic pydantic-settings httpx pytest ruff
+      # Installs core deps (incl. anthropic/openai) + dev tools. acryl-datahub
+      # stays optional — the live-only tests importorskip it, the rest run offline.
+      - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: python -m pytest -q
 

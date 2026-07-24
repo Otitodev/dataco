@@ -137,12 +137,12 @@ class DataHubGraphClient:
         DataHub raises ``GraphError`` (HTTP 400 BAD_REQUEST) when a URN names an
         entity it doesn't know — the read protocol promises a graceful miss
         (``None``/empty), not a 500. Genuine errors (bad query, auth) re-raise.
+        The SDK is not imported here (``_is_not_found`` matches by class name),
+        so the offline mapping tests run without ``acryl-datahub`` installed.
         """
-        from datahub.configuration.common import GraphError
-
         try:
             return self._graph().execute_graphql(query, variables=variables)
-        except GraphError as exc:
+        except Exception as exc:
             if _is_not_found(exc):
                 logger.warning("DataHub entity not found (%s): %s", variables, exc)
                 return None
@@ -287,6 +287,10 @@ class DataHubGraphClient:
 
 
 def _is_not_found(exc: Exception) -> bool:
+    # Match acryl-datahub's GraphError by class name so this module needs no
+    # SDK import at call time (keeps the offline mapping tests SDK-free).
+    if type(exc).__name__ != "GraphError":
+        return False
     msg = str(exc).lower()
     return "failed to find entity" in msg or "bad_request" in msg
 
