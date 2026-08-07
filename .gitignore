@@ -26,3 +26,12 @@ scripts/
 
 # Local agent tooling / settings
 .claude/
+
+# Local submission drafts (not for the repo)
+submission/
+
+# Internal planning docs (kept local, not for the public repo)
+docs/Dataco-PRD.md
+docs/Dataco-TRD.md
+docs/Dataco-MVP.md
+docs/Dataco-Implementation-Plan.md
