@@ -1,11 +1,26 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import assets, dashboard, issues, reasoning, scan, search
+from app.config import SCAN_INTERVAL_SECONDS
+from app.services import scheduler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Opt-in autonomous loop: only runs when SCAN_INTERVAL_SECONDS > 0, so tests
+    # (which build create_app() per fixture) and offline runs stay loop-free.
+    scheduler.start(SCAN_INTERVAL_SECONDS)
+    try:
+        yield
+    finally:
+        await scheduler.stop()
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Dataco", version="0.1.0")
+    app = FastAPI(title="Dataco", version="0.1.0", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,

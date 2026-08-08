@@ -111,6 +111,7 @@ app runs end-to-end with zero secrets.
 | `DATAHUB_PROVIDER` | `datahub` \| `fake` | Which DataHub client to build |
 | `DATAHUB_URL` | `http://localhost:8080` | GMS **API** port (the UI is `9002`) |
 | `DATAHUB_TOKEN` | a PAT | Unset → DataHub falls back to the seeded fake |
+| `SCAN_INTERVAL_SECONDS` | `300` | `0` (default) → off. `>0` runs the scan agent every N seconds with no human trigger (see `GET /scan/status`). |
 
 ---
 

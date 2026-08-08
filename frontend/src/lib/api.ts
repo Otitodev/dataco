@@ -40,6 +40,15 @@ export interface WriteBackResult {
 	detail: string;
 }
 
+export interface ScanStatus {
+	enabled: boolean;
+	interval_seconds: number;
+	last_run_at: string | null;
+	last_scanned: number;
+	last_detected: number;
+	watch_count: number;
+}
+
 export interface Brief {
 	id: string;
 	issue_id: string;
@@ -146,4 +155,8 @@ export async function writeBackIssue(issueId: string): Promise<WriteBackResult> 
 	return fetchJson<WriteBackResult>(`/issue/${issueId}/writeback`, {
 		method: 'POST'
 	});
+}
+
+export async function getScanStatus(): Promise<ScanStatus> {
+	return fetchJson<ScanStatus>('/scan/status');
 }

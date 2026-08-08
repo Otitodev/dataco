@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getDashboard, runScan, type Issue } from '$lib/api';
+	import { getDashboard, getScanStatus, runScan, type Issue, type ScanStatus } from '$lib/api';
 	import { sortBySeverity } from '$lib/severity';
 	import IssueCard from '$lib/components/IssueCard.svelte';
 
@@ -11,11 +11,41 @@
 	let scanMsg = $state('');
 	let scanTimer: ReturnType<typeof setTimeout>;
 
+	let scanStatus = $state<ScanStatus | null>(null);
+
 	$effect(() => {
 		getDashboard()
 			.then((data) => (issues = sortBySeverity(data)))
 			.catch(() => (error = true))
 			.finally(() => (loading = false));
+		refreshStatus();
+	});
+
+	function refreshStatus() {
+		getScanStatus()
+			.then((s) => (scanStatus = s))
+			.catch(() => (scanStatus = null));
+	}
+
+	function formatInterval(seconds: number): string {
+		if (seconds % 3600 === 0) return `${seconds / 3600}h`;
+		if (seconds % 60 === 0) return `${seconds / 60}m`;
+		return `${seconds}s`;
+	}
+
+	function formatAgo(iso: string): string {
+		const secs = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+		if (secs < 60) return `${secs}s ago`;
+		if (secs < 3600) return `${Math.round(secs / 60)}m ago`;
+		return `${Math.round(secs / 3600)}h ago`;
+	}
+
+	let badgeText = $derived.by(() => {
+		if (!scanStatus) return '';
+		if (!scanStatus.enabled) return 'Auto-scan: off';
+		const parts = [`Auto-scan: on · every ${formatInterval(scanStatus.interval_seconds)}`];
+		if (scanStatus.last_run_at) parts.push(`last run ${formatAgo(scanStatus.last_run_at)}`);
+		return parts.join(' · ');
 	});
 
 	async function scan() {
@@ -31,6 +61,7 @@
 					? `Scanned ${results.length} asset(s) · ${detected} new ${noun} detected & written back to DataHub.`
 					: `Scanned ${results.length} asset(s) · no new issues.`;
 			issues = sortBySeverity(await getDashboard());
+			refreshStatus();
 			error = false;
 		} catch {
 			scanMsg = 'Scan failed — check that the API is running on localhost:8000.';
@@ -56,13 +87,25 @@
 				</p>
 			{/if}
 		</div>
-		<button
-			onclick={scan}
-			disabled={scanning}
-			class="shrink-0 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-ink disabled:opacity-60"
-		>
-			{scanning ? 'Scanning…' : 'Scan now'}
-		</button>
+		<div class="flex shrink-0 flex-col items-end gap-2">
+			<button
+				onclick={scan}
+				disabled={scanning}
+				class="rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-ink disabled:opacity-60"
+			>
+				{scanning ? 'Scanning…' : 'Scan now'}
+			</button>
+			{#if badgeText}
+				<span
+					class="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 text-xs text-ink-600"
+				>
+					<span
+						class="h-1.5 w-1.5 rounded-full {scanStatus?.enabled ? 'bg-ink-900' : 'bg-ink-400'}"
+					></span>
+					{badgeText}
+				</span>
+			{/if}
+		</div>
 	</div>
 	{#if scanMsg}
 		<p class="mt-3 text-[15px] text-ink-600">{scanMsg}</p>

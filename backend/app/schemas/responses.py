@@ -79,6 +79,15 @@ class ScanResultResponse(BaseModel):
     detail: str = ""
 
 
+class ScanStatusResponse(BaseModel):
+    enabled: bool
+    interval_seconds: int
+    last_run_at: datetime | None = None
+    last_scanned: int = 0
+    last_detected: int = 0
+    watch_count: int = 0
+
+
 class WriteBackResponse(BaseModel):
     issue_id: str
     ok: bool

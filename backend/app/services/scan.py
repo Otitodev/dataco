@@ -23,10 +23,23 @@ from app.domain.severity import compute_severity
 from app.domain.types import IssueType, MonitoringState
 from app.integrations.datahub import DataHubClient
 from app.integrations.llm import LLMClient
+from app.monitored_assets import WATCHLIST
 from app.repository.models import IssueRecord, MonitoringStateModel
 from app.repository.store import Repository
 from app.services.reasoning import explain_issue
 from app.services.writeback import write_back_issue
+
+
+def resolve_urns(
+    repo: Repository, explicit: list[str] | None = None
+) -> list[str]:
+    """Which assets a scan should cover.
+
+    Precedence: an explicit request → assets already primed in the monitoring
+    baseline (via ``seed_live.py``) → the static ``WATCHLIST``. Shared by the
+    ``POST /scan`` endpoint and the background scheduler so they can't drift.
+    """
+    return explicit or repo.list_monitored_urns() or WATCHLIST
 
 
 @dataclass

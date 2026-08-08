@@ -26,6 +26,21 @@ DATAHUB_TOKEN = os.getenv("DATAHUB_TOKEN", "")
 DATAHUB_WRITE_ENABLED = os.getenv("DATAHUB_WRITE_ENABLED", "true").lower() == "true"
 DATAHUB_TAG_PREFIX = os.getenv("DATAHUB_TAG_PREFIX", "trust")
 
+
+def _int(value: str | None, default: int = 0) -> int:
+    """Parse an int env var, falling back on blank/garbage values."""
+    try:
+        return int(_clean(value))
+    except ValueError:
+        return default
+
+
+# Continuous scanning: when > 0, an in-process background loop runs the scan
+# agent over the watchlist every N seconds (app/services/scheduler.py), so the
+# agent watches the catalog without a human pressing "Scan now". 0 = disabled
+# (default) — keeps CI/tests/offline runs free of a background loop.
+SCAN_INTERVAL_SECONDS = _int(os.getenv("SCAN_INTERVAL_SECONDS"), 0)
+
 # LLM layer — provider-agnostic settings consumed by the LLM factory
 # (app/integrations/llm.py -> create_llm_client).
 LLM_PROVIDER = _clean(os.getenv("LLM_PROVIDER", "anthropic")) or "anthropic"
