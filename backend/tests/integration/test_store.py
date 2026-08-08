@@ -111,3 +111,29 @@ class TestMonitoringState:
         fetched = repo.get_monitoring_state("urn:m2")
         assert fetched.last_schema_hash == "v2"
         assert fetched.last_owner == "b"
+
+
+class TestWritebackPersistence:
+    def test_partial_writeback_is_not_marked_done(self, repo):
+        # Only the tag landed (assertion failed) -> not fully written back, so
+        # the next scan's self-heal (written_back_at is None) can retry it.
+        issue = repo.create_issue(build_issue(issue_type="schema_drift"))
+        repo.save_writeback(issue.id, tag_urn="urn:li:tag:trust:x", assertion_urn=None)
+
+        saved = repo.get_issue(issue.id)
+        assert saved.datahub_tag_urn == "urn:li:tag:trust:x"
+        assert saved.datahub_assertion_urn is None
+        assert saved.written_back_at is None
+
+    def test_completing_writeback_marks_done_without_clobbering(self, repo):
+        issue = repo.create_issue(build_issue(issue_type="schema_drift"))
+        repo.save_writeback(issue.id, tag_urn="urn:li:tag:trust:x", assertion_urn=None)
+        # A later scan completes the assertion; the earlier tag must survive.
+        repo.save_writeback(
+            issue.id, tag_urn=None, assertion_urn="urn:li:assertion:dataco-x"
+        )
+
+        saved = repo.get_issue(issue.id)
+        assert saved.datahub_tag_urn == "urn:li:tag:trust:x"  # not clobbered by None
+        assert saved.datahub_assertion_urn == "urn:li:assertion:dataco-x"
+        assert saved.written_back_at is not None  # both present -> done

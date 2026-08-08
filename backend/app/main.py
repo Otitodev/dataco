@@ -3,7 +3,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import assets, dashboard, issues, reasoning, scan, search
+from app.api import (
+    assets,
+    dashboard,
+    issues,
+    monitoring,
+    reasoning,
+    scan,
+    search,
+)
 from app.config import SCAN_INTERVAL_SECONDS
 from app.services import scheduler
 
@@ -35,6 +43,7 @@ def create_app() -> FastAPI:
     app.include_router(assets.router)
     app.include_router(reasoning.router)
     app.include_router(scan.router)
+    app.include_router(monitoring.router)
     app.include_router(search.router)
 
     @app.get("/health")

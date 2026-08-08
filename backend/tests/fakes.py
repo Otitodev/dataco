@@ -17,6 +17,9 @@ class FakeDataHubClient:
     def get_asset(self, urn: str) -> AssetMeta | None:
         return self._assets.get(urn)
 
+    def get_assets(self, urns: list[str]) -> dict[str, AssetMeta]:
+        return {u: self._assets[u] for u in urns if u in self._assets}
+
     def get_lineage(self, urn: str) -> Lineage:
         return self._lineage.get(urn, Lineage())
 

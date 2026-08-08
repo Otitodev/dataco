@@ -79,6 +79,18 @@ class ScanResultResponse(BaseModel):
     detail: str = ""
 
 
+class MonitoredAssetResponse(BaseModel):
+    urn: str
+    name: str
+    owner: str | None = None
+    last_checked_at: datetime | None = None
+    active_issue: bool = False
+
+
+class AddMonitoredRequest(BaseModel):
+    urn: str
+
+
 class ScanStatusResponse(BaseModel):
     enabled: bool
     interval_seconds: int

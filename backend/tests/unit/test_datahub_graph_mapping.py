@@ -6,7 +6,26 @@ DataHub instance.
 """
 
 from app.domain.types import Field
-from app.integrations.datahub_graph import DataHubGraphClient
+from app.integrations.datahub_graph import (
+    DataHubGraphClient,
+    _is_transient_report_error,
+)
+
+
+def test_transient_report_errors_trigger_retry():
+    # Eventual-consistency / OpenSearch-warmup wordings must all be retryable.
+    for msg in (
+        "Assertion urn:li:assertion:x does not exist",
+        "Failed to retrieve entity for assertion with urn ...",
+        "Search query failed:. search",
+        "search: Try again",
+    ):
+        assert _is_transient_report_error(Exception(msg)), msg
+
+
+def test_non_transient_report_error_surfaces_immediately():
+    assert not _is_transient_report_error(Exception("Unauthorized: invalid token"))
+    assert not _is_transient_report_error(Exception("Unknown type Foo"))
 
 URN = "urn:li:dataset:(urn:li:dataPlatform:snowflake,DB.PUBLIC.lab_ingestion_feed,PROD)"
 
@@ -93,6 +112,19 @@ def test_get_asset_maps_all_fields():
 
 def test_get_asset_returns_none_when_dataset_missing():
     assert _client({"dataset": None}).get_asset(URN) is None
+
+
+def test_get_assets_batches_and_maps_present_only():
+    # Aliased batch response: a0 resolves, a1 (missing asset) is null.
+    resp = {"a0": _ASSET["dataset"], "a1": None}
+    result = _client(resp).get_assets([URN, "urn:li:dataset:missing"])
+    assert set(result) == {URN}
+    assert result[URN].name == "lab_ingestion_feed"
+
+
+def test_get_assets_empty_input_makes_no_request():
+    # Empty list short-circuits without touching the graph client.
+    assert DataHubGraphClient("http://x", "t").get_assets([]) == {}
 
 
 def test_get_lineage_maps_upstream_and_downstream():

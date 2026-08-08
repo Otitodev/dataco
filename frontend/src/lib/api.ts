@@ -40,6 +40,21 @@ export interface WriteBackResult {
 	detail: string;
 }
 
+export interface SearchHit {
+	urn: string;
+	name: string;
+	description: string;
+	owner: string | null;
+}
+
+export interface MonitoredAsset {
+	urn: string;
+	name: string;
+	owner: string | null;
+	last_checked_at: string | null;
+	active_issue: boolean;
+}
+
 export interface ScanStatus {
 	enabled: boolean;
 	interval_seconds: number;
@@ -159,4 +174,23 @@ export async function writeBackIssue(issueId: string): Promise<WriteBackResult> 
 
 export async function getScanStatus(): Promise<ScanStatus> {
 	return fetchJson<ScanStatus>('/scan/status');
+}
+
+export async function findAssets(query: string): Promise<SearchHit[]> {
+	return fetchJson<SearchHit[]>(`/search?q=${encodeURIComponent(query)}`);
+}
+
+export async function getMonitored(): Promise<MonitoredAsset[]> {
+	return fetchJson<MonitoredAsset[]>('/monitored');
+}
+
+export async function addMonitored(urn: string): Promise<MonitoredAsset> {
+	return fetchJson<MonitoredAsset>('/monitored', {
+		method: 'POST',
+		body: JSON.stringify({ urn })
+	});
+}
+
+export async function removeMonitored(urn: string): Promise<void> {
+	await fetchJson(`/monitored?urn=${encodeURIComponent(urn)}`, { method: 'DELETE' });
 }

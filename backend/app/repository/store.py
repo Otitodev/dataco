@@ -91,9 +91,16 @@ class Repository:
         issue = self.session.get(IssueRecord, issue_id)
         if issue is None:
             return None
-        issue.datahub_tag_urn = tag_urn
-        issue.datahub_assertion_urn = assertion_urn
-        issue.written_back_at = datetime.now(UTC)
+        # Persist partial progress, but never clobber a previously-good URN with
+        # a None from a later failed attempt.
+        if tag_urn is not None:
+            issue.datahub_tag_urn = tag_urn
+        if assertion_urn is not None:
+            issue.datahub_assertion_urn = assertion_urn
+        # "Written back" means BOTH artifacts landed. Until then leave
+        # written_back_at unset so the scan self-heals the missing one next run.
+        if issue.datahub_tag_urn and issue.datahub_assertion_urn:
+            issue.written_back_at = datetime.now(UTC)
         self.session.commit()
         return issue
 
@@ -120,6 +127,17 @@ class Repository:
 
     def list_monitored_urns(self) -> list[str]:
         return list(self.session.scalars(select(MonitoringStateModel.asset_id)))
+
+    def list_monitoring_states(self) -> list[MonitoringStateModel]:
+        return list(self.session.scalars(select(MonitoringStateModel)))
+
+    def delete_monitoring_state(self, asset_id: str) -> bool:
+        state = self.session.get(MonitoringStateModel, asset_id)
+        if state is None:
+            return False
+        self.session.delete(state)
+        self.session.commit()
+        return True
 
     def upsert_monitoring_state(
         self, state: MonitoringStateModel

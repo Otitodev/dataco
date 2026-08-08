@@ -59,6 +59,17 @@ query dataset($urn: String!) {
 }
 """
 
+# Selection set shared by the batch query; mirrors the fields _ASSET_QUERY reads.
+_DATASET_FIELDS = """
+    urn
+    name
+    properties { name description }
+    editableProperties { description }
+    ownership { owners { owner { ... on CorpUser { urn } ... on CorpGroup { urn } } } }
+    schemaMetadata { fields { fieldPath nativeDataType } }
+    tags { tags { tag { urn } } }
+"""
+
 _LINEAGE_QUERY = """
 query lineage($urn: String!) {
   dataset(urn: $urn) {
@@ -170,23 +181,31 @@ class DataHubGraphClient:
     def get_asset(self, urn: str) -> AssetMeta | None:
         data = self._run(_ASSET_QUERY, variables={"urn": urn})
         ds = _dig(data, "dataset")
-        if not ds:
-            return None
-        props = ds.get("properties") or {}
-        editable = ds.get("editableProperties") or {}
-        fields = [
-            Field(name=f.get("fieldPath", ""), type=f.get("nativeDataType", ""))
-            for f in _dig(ds, "schemaMetadata", "fields") or []
-        ]
-        return AssetMeta(
-            urn=urn,
-            name=_asset_name(ds, urn),
-            description=props.get("description") or editable.get("description") or "",
-            owner=_first_owner(ds.get("ownership")),
-            schema_fields=fields,
-            freshness=None,  # TODO: map dataset freshness once validated on live schema
-            tags=_tag_names(ds.get("tags")),
-        )
+        return _dataset_to_meta(ds, urn) if ds else None
+
+    def get_assets(self, urns: list[str]) -> dict[str, AssetMeta]:
+        """Fetch many assets in a single GraphQL round-trip (aliased queries).
+
+        Avoids the N-calls cost of looping ``get_asset`` — e.g. when listing the
+        whole monitored watchlist. Unknown URNs are simply absent from the map;
+        a failed request degrades to an empty map rather than raising.
+        """
+        if not urns:
+            return {}
+        aliases = {f"a{i}": urn for i, urn in enumerate(urns)}
+        query = _batch_asset_query(list(aliases))
+        variables = {alias: urn for alias, urn in aliases.items()}
+        try:
+            data = self._run(query, variables=variables) or {}
+        except Exception as exc:  # noqa: BLE001 — best-effort bulk read
+            logger.warning("batch get_assets failed (%d urns): %s", len(urns), exc)
+            return {}
+        out: dict[str, AssetMeta] = {}
+        for alias, urn in aliases.items():
+            ds = data.get(alias)
+            if ds:
+                out[urn] = _dataset_to_meta(ds, urn)
+        return out
 
     def get_lineage(self, urn: str) -> Lineage:
         data = self._run(_LINEAGE_QUERY, variables={"urn": urn})
@@ -273,7 +292,7 @@ class DataHubGraphClient:
                     )
                     break
                 except GraphError as exc:
-                    if "does not exist" in str(exc) and attempt < 4:
+                    if _is_transient_report_error(exc) and attempt < 4:
                         time.sleep(2)
                         continue
                     raise
@@ -295,6 +314,26 @@ def _is_not_found(exc: Exception) -> bool:
     return "failed to find entity" in msg or "bad_request" in msg
 
 
+def _is_transient_report_error(exc: Exception) -> bool:
+    """A ``reportAssertionResult`` failure a brief retry may clear.
+
+    Right after upsert the assertion is eventually consistent, and if the search
+    backend (OpenSearch) is still warming up GMS returns a 500 whose wording
+    varies: "does not exist", "Failed to retrieve entity", "Search query failed",
+    "Try again". Retry on any of these; surface everything else immediately.
+    """
+    msg = str(exc).lower()
+    return any(
+        s in msg
+        for s in (
+            "does not exist",
+            "failed to retrieve entity",
+            "search query failed",
+            "try again",
+        )
+    )
+
+
 def _assertion_severity(severity: str) -> str:
     """Map Dataco severity to DataHub's assertion severity (LOW/MEDIUM/HIGH)."""
     s = (severity or "").lower()
@@ -310,6 +349,34 @@ def _assertion_id(entity_urn: str, issue_type: str) -> str:
     idempotent (re-runs upsert the same assertion instead of duplicating)."""
     digest = hashlib.sha1(f"dataco|{entity_urn}|{issue_type}".encode()).hexdigest()
     return f"dataco-{digest[:24]}"
+
+
+def _batch_asset_query(aliases: list[str]) -> str:
+    """One query fetching many datasets, each under its own alias."""
+    decl = ", ".join(f"${a}: String!" for a in aliases)
+    body = "\n".join(
+        f"  {a}: dataset(urn: ${a}) {{ {_DATASET_FIELDS} }}" for a in aliases
+    )
+    return f"query batch({decl}) {{\n{body}\n}}"
+
+
+def _dataset_to_meta(ds: dict, urn: str) -> AssetMeta:
+    """Map a GraphQL ``dataset`` node to our ``AssetMeta`` domain type."""
+    props = ds.get("properties") or {}
+    editable = ds.get("editableProperties") or {}
+    fields = [
+        Field(name=f.get("fieldPath", ""), type=f.get("nativeDataType", ""))
+        for f in _dig(ds, "schemaMetadata", "fields") or []
+    ]
+    return AssetMeta(
+        urn=urn,
+        name=_asset_name(ds, urn),
+        description=props.get("description") or editable.get("description") or "",
+        owner=_first_owner(ds.get("ownership")),
+        schema_fields=fields,
+        freshness=None,  # TODO: map dataset freshness once validated on live schema
+        tags=_tag_names(ds.get("tags")),
+    )
 
 
 def _dig(obj: Any, *keys: str) -> Any:
